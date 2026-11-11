@@ -19,13 +19,33 @@
   select, button { background:var(--panel); color:var(--text); border:1px solid #5a4630;
                    border-radius:6px; padding:8px 14px; font-size:.95rem; font-family:inherit; cursor:pointer; }
   button:hover, select:hover { border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:default; }
+  #status.win { color:#7ddc7a; }
+  #tutorial { width:100%; max-width:560px; background:var(--panel); border:1px solid #5a4630;
+              border-radius:8px; padding:14px 16px; display:none; }
+  #tutorial h2 { margin:0 0 8px; font-size:1.15rem; color:var(--accent); }
+  #tut-text { margin:0 0 12px; line-height:1.7; }
+  #tutorial .controls { justify-content:space-between; }
+  .hidden { display:none !important; }
 </style>
 </head>
 <body>
 <h1>象　棋</h1>
 <div id="status"></div>
 <canvas id="board" width="560" height="620"></canvas>
-<div class="controls">
+<div id="tutorial">
+  <h2 id="tut-title"></h2>
+  <p id="tut-text"></p>
+  <div class="controls">
+    <button id="tut-prev">← 上一課</button>
+    <button id="tut-reset">重來</button>
+    <span id="tut-count" style="align-self:center"></span>
+    <button id="tut-next">下一課 →</button>
+    <button id="tut-exit">返回對局</button>
+  </div>
+</div>
+<div class="controls" id="game-controls">
+  <button id="tut-open">📖 新手教學</button>
   <select id="mode">
     <option value="ai-red">對電腦（我執紅先行）</option>
     <option value="ai-black">對電腦（我執黑後行）</option>
@@ -213,6 +233,69 @@ const ctx = canvas.getContext('2d');
 const statusEl = document.getElementById('status');
 
 let board, redTurn, selected, targets, history, lastMove, over, thinking, flip;
+let tut = null;      // current lesson index, null when playing a normal game
+let gameId = 0;      // invalidates pending AI moves after a reset
+
+/* ================= Tutorial ================= */
+const LESSONS = [
+  { title: '帥／將', text: '帥（紅）與將（黑）是最重要的棋子，被將死就輸了。它只能待在<b>九宮</b>（畫斜線的 3×3 區域）裡，每次直走或橫走一格。<br>👉 點擊紅色的「帥」看看它能走到哪裡。',
+    pieces: [[8,4,'K'],[2,3,'a'],[0,3,'k']] },
+  { title: '仕／士', text: '仕也只能待在九宮裡，每次<b>斜走一格</b>，專門保護帥。',
+    pieces: [[9,3,'K'],[8,4,'A'],[0,5,'k']] },
+  { title: '相／象', text: '相走「田」字（斜走兩格），而且<b>不能過河</b>。如果「田」字中心有棋子擋住就不能走，稱為<b>塞象眼</b>。<br>👉 左上方被黑卒塞住了，試試看。',
+    pieces: [[9,4,'K'],[7,4,'E'],[6,3,'p'],[0,3,'k']] },
+  { title: '傌／馬', text: '馬走「日」字：先直走一格，再斜走一格。如果直走的那一格有棋子，就走不過去，稱為<b>蹩馬腿</b>。<br>👉 上方被自己的兵擋住了，所以往上的兩步不能走。',
+    pieces: [[9,4,'K'],[5,4,'H'],[4,4,'P'],[0,3,'k']] },
+  { title: '俥／車', text: '車可以直線走任意格數，但不能越過棋子；碰到對方棋子就能吃掉。它是威力最強的棋子。<br>👉 試著吃掉右邊的黑馬。',
+    pieces: [[9,4,'K'],[5,4,'R'],[5,7,'h'],[0,3,'k']] },
+  { title: '炮／砲', text: '炮不吃子時走法和車一樣；要吃子時，必須<b>隔著一個棋子</b>（稱為「炮架」）跳過去吃。<br>👉 隔著黑卒，吃掉最上面的黑車。',
+    pieces: [[9,4,'K'],[7,1,'C'],[3,1,'p'],[0,1,'r'],[0,3,'k']] },
+  { title: '兵／卒', text: '兵只能往前走一格，不能後退。<b>過河</b>（越過楚河漢界）之後，也可以左右橫走一格。<br>👉 比較左邊（未過河）和右邊（已過河）兩個兵。',
+    pieces: [[9,4,'K'],[6,2,'P'],[3,6,'P'],[0,3,'k']] },
+  { title: '王不見王', text: '帥和將不能在同一條直線上<b>面對面</b>（中間沒有其他棋子）。<br>👉 點擊帥：它不能往左走，因為那樣會和黑將面對面。',
+    pieces: [[9,4,'K'],[0,3,'k']] },
+  { title: '練習一：雙車錯殺', text: '攻擊對方的將叫<b>將軍</b>；對方怎麼走都解不了，就是<b>將死</b>，你就贏了（無路可走也算輸，叫「困斃」）。<br>🎯 紅方走一步將死黑將。提示：一隻車已經封住第二排。',
+    pieces: [[9,3,'K'],[1,0,'R'],[5,8,'R'],[0,4,'k']], puzzle: true },
+  { title: '練習二：馬後炮', text: '🎯 紅方走一步將死黑將。提示：讓馬當炮架，同時封住將的退路。這招叫「馬後炮」。',
+    pieces: [[9,3,'K'],[4,3,'H'],[7,4,'C'],[0,4,'k']], puzzle: true },
+];
+
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ''; }
+
+function loadLesson(i) {
+  tut = i; gameId++;
+  const lesson = LESSONS[i];
+  board = Array.from({length:10}, () => Array(9).fill(null));
+  lesson.pieces.forEach(([r, c, p]) => { board[r][c] = p; });
+  redTurn = true; selected = null; targets = []; history = [];
+  lastMove = null; over = false; thinking = false; flip = false;
+  document.getElementById('tut-title').textContent = `第 ${i + 1} 課　${lesson.title}`;
+  document.getElementById('tut-text').innerHTML = lesson.text;
+  document.getElementById('tut-count').textContent = `${i + 1} / ${LESSONS.length}`;
+  document.getElementById('tut-prev').disabled = i === 0;
+  document.getElementById('tut-next').disabled = i === LESSONS.length - 1;
+  update();
+}
+
+function tutMove(m) {
+  make(board, m);
+  lastMove = m; selected = null; targets = [];
+  if (!LESSONS[tut].puzzle) { update(); return; }
+  over = true;
+  draw();
+  if (!legalMoves(board, false).length) {
+    setStatus('答對了！黑將無路可走 🎉', 'win');
+  } else {
+    setStatus('還沒將死，再試一次…', 'check');
+    const id = gameId;
+    setTimeout(() => { if (id === gameId) loadLesson(tut); }, 1200);
+  }
+}
+
+function showTutorial(on) {
+  document.getElementById('tutorial').style.display = on ? 'block' : 'none';
+  document.getElementById('game-controls').classList.toggle('hidden', on);
+}
 
 function aiSide() {
   const mode = document.getElementById('mode').value;
@@ -222,6 +305,7 @@ function aiSide() {
 }
 
 function newGame() {
+  tut = null; gameId++;
   board = initialBoard();
   redTurn = true; selected = null; targets = []; history = [];
   lastMove = null; over = false; thinking = false;
@@ -299,7 +383,9 @@ function draw() {
 function update() {
   const side = redTurn ? '紅方' : '黑方';
   statusEl.className = '';
-  if (over) {
+  if (tut !== null) {
+    setStatus(LESSONS[tut].puzzle ? '輪到紅方：一步將死黑將' : '點擊紅色棋子，看看它能走到哪裡');
+  } else if (over) {
     // handled in finish()
   } else if (thinking) {
     statusEl.textContent = '電腦思考中…';
@@ -332,7 +418,9 @@ function maybeAI() {
   const ai = aiSide();
   if (over || ai === null || redTurn !== ai) return;
   thinking = true; update();
+  const id = gameId;
   setTimeout(() => {
+    if (id !== gameId) return;
     const depth = Number(document.getElementById('level').value);
     const m = chooseMove(board, redTurn, depth);
     thinking = false;
@@ -342,7 +430,7 @@ function maybeAI() {
 
 canvas.addEventListener('click', e => {
   if (over || thinking) return;
-  const ai = aiSide();
+  const ai = tut === null ? aiSide() : null;
   if (ai !== null && redTurn === ai) return;
   const rect = canvas.getBoundingClientRect();
   const x = (e.clientX - rect.left) * canvas.width / rect.width;
@@ -352,7 +440,9 @@ canvas.addEventListener('click', e => {
   if (flip) { c = 8 - c; r = 9 - r; }
 
   if (selected && targets.some(t => t[0] === r && t[1] === c)) {
-    play([selected[0], selected[1], r, c]);
+    const m = [selected[0], selected[1], r, c];
+    if (tut !== null) { tutMove(m); return; }
+    play(m);
     maybeAI();
     return;
   }
@@ -360,10 +450,16 @@ canvas.addEventListener('click', e => {
   if (p && isRed(p) === redTurn) {
     selected = [r, c];
     targets = legalMoves(board, redTurn).filter(m => m[0] === r && m[1] === c).map(m => [m[2], m[3]]);
+    if (tut !== null) targets = targets.filter(([tr, tc]) => board[tr][tc] !== 'k');
   } else { selected = null; targets = []; }
   draw();
 });
 
+document.getElementById('tut-open').onclick = () => { showTutorial(true); loadLesson(0); };
+document.getElementById('tut-prev').onclick = () => loadLesson(tut - 1);
+document.getElementById('tut-next').onclick = () => loadLesson(tut + 1);
+document.getElementById('tut-reset').onclick = () => loadLesson(tut);
+document.getElementById('tut-exit').onclick = () => { showTutorial(false); newGame(); };
 document.getElementById('restart').onclick = newGame;
 document.getElementById('mode').onchange = newGame;
 document.getElementById('undo').onclick = () => {
