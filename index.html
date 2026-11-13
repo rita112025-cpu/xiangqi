@@ -47,6 +47,7 @@
 <div class="controls" id="game-controls">
   <button id="tut-open">📖 新手教學</button>
   <select id="mode">
+    <option value="ai-random" selected>對電腦（隨機決定誰先走）</option>
     <option value="ai-red">對電腦（我執紅先行）</option>
     <option value="ai-black">對電腦（我執黑後行）</option>
     <option value="pvp">雙人同機</option>
@@ -322,19 +323,20 @@ function showTutorial(on) {
   document.getElementById('game-controls').classList.toggle('hidden', on);
 }
 
-function aiSide() {
-  const mode = document.getElementById('mode').value;
-  if (mode === 'ai-red') return false;   // 電腦執黑
-  if (mode === 'ai-black') return true;  // 電腦執紅
-  return null;
-}
+let aiRed = false;  // true: AI plays red, false: AI plays black, null: two players
+
+function aiSide() { return aiRed; }
 
 function newGame() {
   tut = null; gameId++;
+  const mode = document.getElementById('mode').value;
+  aiRed = mode === 'pvp' ? null
+        : mode === 'ai-random' ? Math.random() < 0.5
+        : mode === 'ai-black';
   board = initialBoard();
   redTurn = true; selected = null; targets = []; history = [];
   lastMove = null; over = false; thinking = false;
-  flip = document.getElementById('mode').value === 'ai-black';
+  flip = aiRed === true;
   update();
   maybeAI();
 }
@@ -406,14 +408,15 @@ function draw() {
 }
 
 function update() {
-  const side = redTurn ? '紅方' : '黑方';
+  const you = aiRed === null ? '' : `（你執${aiRed ? '黑' : '紅'}）`;
+  const side = (redTurn ? '紅方' : '黑方') + you;
   statusEl.className = '';
   if (tut !== null) {
     setStatus(LESSONS[tut].puzzle ? '輪到紅方：一步將死黑將' : '點擊紅色棋子，看看它能走到哪裡');
   } else if (over) {
     // handled in finish()
   } else if (thinking) {
-    statusEl.textContent = '電腦思考中…';
+    statusEl.textContent = `電腦思考中…${you}`;
   } else if (inCheck(board, redTurn)) {
     statusEl.textContent = `將軍！輪到${side}`; statusEl.className = 'check';
   } else {
