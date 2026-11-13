@@ -425,7 +425,7 @@ function update() {
 function finish() {
   if (legalMoves(board, redTurn).length) return false;
   over = true;
-  statusEl.textContent = `${redTurn ? '黑方' : '紅方'}獲勝！（${inCheck(board, redTurn) ? '將死' : '困斃'}）`;
+  statusEl.textContent = `${redTurn ? '黑方' : '紅方'}獲勝！（${inCheck(board, redTurn) ? '將死' : '困斃'}）— 按「悔棋」或「重新開始」`;
   statusEl.className = 'check';
   draw();
   return true;
@@ -447,8 +447,14 @@ function maybeAI() {
   setTimeout(() => {
     if (id !== gameId) return;
     const depth = Number(document.getElementById('level').value);
-    const m = chooseMove(board, redTurn, depth);
-    thinking = false;
+    let m = null;
+    try {
+      m = chooseMove(board, redTurn, depth);
+    } catch (err) {
+      setStatus('電腦出錯了，請按「悔棋」或「重新開始」', 'check');
+    } finally {
+      thinking = false;
+    }
     if (m) play(m);
   }, 60);
 }
@@ -497,6 +503,7 @@ document.getElementById('undo').onclick = () => {
   over = false; selected = null; targets = [];
   lastMove = history.length ? history[history.length - 1].m : null;
   update();
+  maybeAI();  // undoing back to the AI's turn must let it move again
 };
 
 newGame();
