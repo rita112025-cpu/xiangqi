@@ -194,11 +194,33 @@ function evaluate(b, red) {
   return red ? s : -s;
 }
 
+const victim = (b, m) => (b[m[2]][m[3]] ? VALUE[b[m[2]][m[3]].toUpperCase()] : 0);
+const attacker = (b, m) => VALUE[b[m[0]][m[1]].toUpperCase()];
+// Most valuable victim first, then least valuable attacker
+const byCapture = b => (x, y) => (victim(b, y) - victim(b, x)) || (attacker(b, x) - attacker(b, y));
+
+// Keep searching captures past the depth limit so the AI sees recaptures (avoids the horizon effect)
+function quiesce(b, alpha, beta, red, qdepth) {
+  const stand = evaluate(b, red);
+  if (stand >= beta || qdepth === 0) return stand;
+  if (stand > alpha) alpha = stand;
+  const caps = gen(b, red).filter(m => b[m[2]][m[3]]);
+  caps.sort(byCapture(b));
+  for (const m of caps) {
+    if (b[m[2]][m[3]].toUpperCase() === 'K') return 10000;
+    const cap = make(b, m);
+    const v = -quiesce(b, -beta, -alpha, !red, qdepth - 1);
+    unmake(b, m, cap);
+    if (v >= beta) return v;
+    if (v > alpha) alpha = v;
+  }
+  return alpha;
+}
+
 function negamax(b, depth, alpha, beta, red) {
-  if (depth === 0) return evaluate(b, red);
+  if (depth === 0) return quiesce(b, alpha, beta, red, 4);
   const moves = gen(b, red);
-  moves.sort((x, y) => (b[y[2]][y[3]] ? VALUE[b[y[2]][y[3]].toUpperCase()] : 0)
-                     - (b[x[2]][x[3]] ? VALUE[b[x[2]][x[3]].toUpperCase()] : 0));
+  moves.sort(byCapture(b));
   let best = -Infinity;
   for (const m of moves) {
     const target = b[m[2]][m[3]];
@@ -214,12 +236,15 @@ function negamax(b, depth, alpha, beta, red) {
 }
 
 function chooseMove(b, red, depth) {
+  const JITTER = 6;  // small randomness so the AI doesn't always play the same game
   const moves = legalMoves(b, red);
   if (!moves.length) return null;
+  moves.sort(byCapture(b));
   let bestMove = null, bestScore = -Infinity;
   for (const m of moves) {
     const cap = make(b, m);
-    const v = -negamax(b, depth - 1, -Infinity, Infinity, !red) + Math.random() * 6;
+    // Moves that can't beat bestScore - JITTER are cut off early; jitter can't lift them past bestScore
+    const v = -negamax(b, depth - 1, -Infinity, -(bestScore - JITTER), !red) + Math.random() * JITTER;
     unmake(b, m, cap);
     if (v > bestScore) { bestScore = v; bestMove = m; }
   }
