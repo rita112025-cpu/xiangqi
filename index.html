@@ -3,36 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>線上象棋</title>
+<link rel="icon" href="data:,">
+<title>弈境棋院｜線上象棋</title>
 <style>
-  :root { --bg:#2b2118; --panel:#3a2d21; --text:#f3e6d0; --accent:#c8923a; }
-  * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-         font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
-         display:flex; flex-direction:column; align-items:center; padding:16px; gap:12px; }
-  h1 { margin:0; font-size:1.5rem; letter-spacing:.3em; }
-  #status { font-size:1.15rem; min-height:1.6em; font-weight:700; }
-  #status.check { color:#ff6b5a; }
-  canvas { width:100%; max-width:560px; height:auto; border-radius:8px;
-           box-shadow:0 6px 24px rgba(0,0,0,.5); touch-action:manipulation; }
-  .controls { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:560px; }
-  select, button { background:var(--panel); color:var(--text); border:1px solid #5a4630;
-                   border-radius:6px; padding:8px 14px; font-size:.95rem; font-family:inherit; cursor:pointer; }
-  button:hover, select:hover { border-color:var(--accent); }
-  button:disabled { opacity:.4; cursor:default; }
-  #status.win { color:#7ddc7a; }
-  #tutorial { width:100%; max-width:560px; background:var(--panel); border:1px solid #5a4630;
-              border-radius:8px; padding:14px 16px; display:none; }
-  #tutorial h2 { margin:0 0 8px; font-size:1.15rem; color:var(--accent); }
-  #tut-text { margin:0 0 12px; line-height:1.7; }
-  #tutorial .controls { justify-content:space-between; }
-  .hidden { display:none !important; }
+  :root{color-scheme:light;--paper:#f5f1e7;--ink:#233c32;--soft:#51655a;--line:#c8c0ad;--red:#a43b32;--gold:#a98545;--white:#fffdf8}
+  *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--paper);color:#26362f;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
+  header{max-width:1240px;margin:auto;padding:22px 30px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)}
+  header:before{content:'弈';width:42px;height:42px;border:1px solid var(--ink);display:grid;place-items:center;color:var(--red);font:24px serif}
+  h1{margin:0;color:var(--ink);font:600 25px serif;letter-spacing:.12em}.brand-copy p{margin:4px 0 0;color:var(--soft);font-size:13px;letter-spacing:.06em}
+  body{display:grid;grid-template-columns:minmax(420px,760px) 330px;grid-template-rows:auto auto;justify-content:center;align-items:start;column-gap:36px;padding:0 28px 36px}
+  header{grid-column:1/-1;width:100%}#status{grid-column:2;grid-row:2;margin:30px 0 0;min-height:30px;font-size:15px;font-weight:700;color:var(--ink)}#status.check,#status.win{color:var(--red)}
+  canvas{grid-column:1;grid-row:2;width:100%;max-width:760px;height:auto;border:12px solid #e9e1d0;box-shadow:0 12px 32px #2a30251a;touch-action:manipulation;cursor:pointer}
+  #tutorial{grid-column:1;grid-row:3;max-width:760px;margin:20px 0;padding:20px 0;border-top:1px solid var(--line);color:var(--ink)}#tutorial h2{font:600 20px serif;color:var(--ink)}#tut-text{line-height:1.8;color:var(--soft)}
+  #game-controls{grid-column:2;grid-row:2;align-self:start;margin-top:74px;display:grid;gap:11px;justify-content:stretch;max-width:330px}
+  select,button{background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:9px 12px;font:inherit;cursor:pointer;min-height:42px}select{width:100%}button:hover,select:hover{border-color:var(--ink)}button:disabled{opacity:.45;cursor:default}#game-controls button{width:100%}#undo,#hint{width:calc(50% - 5px)!important;display:inline-block}#hint{margin-right:5px;color:var(--gold)}#restart{background:var(--ink);color:white}.hidden{display:none!important}
+  .player-strip{display:flex;justify-content:space-between;align-items:center;min-height:45px;color:var(--soft);font-size:13px}.player-tag{padding:5px 9px;border:1px solid var(--line);border-radius:30px}.player-tag.active{background:var(--ink);color:#fff}.record-wrap{grid-column:2;grid-row:2;margin-top:355px;border-top:1px solid var(--line);padding-top:16px}.record-title{font:600 19px serif;color:var(--ink)}.record-title small{float:right;font:11px sans-serif;color:var(--soft)}.move-list{max-height:220px;overflow:auto;padding:0;list-style:none}.move-row{display:grid;grid-template-columns:32px 1fr 1fr;gap:6px;padding:8px 2px;border-bottom:1px solid #dcd5c7;font-size:13px}.move-entry:last-child{color:var(--red)}.empty-record{font-size:13px;color:var(--soft);padding:12px 2px}::selection{background:#d8c79e;color:var(--ink)}
+  @media(max-width:850px){body{grid-template-columns:minmax(0,1fr) 285px;gap:22px;padding-inline:20px}header{padding-inline:4px}#game-controls{max-width:285px}}
+  @media(max-width:680px){body{grid-template-columns:minmax(0,1fr);gap:0;padding:0 12px 24px}header{padding:16px 0}h1{font-size:21px}header:before{width:38px;height:38px}.brand-copy p{font-size:12px}canvas{grid-column:1;grid-row:2;border-width:6px}.player-strip{min-height:38px;font-size:11px}#status{grid-column:1;grid-row:4;margin:12px 0 0}#game-controls{grid-column:1;grid-row:5;margin:12px 0;max-width:none;grid-template-columns:1fr 1fr}.record-wrap{grid-column:1;grid-row:6;margin-top:8px}#tutorial{grid-row:3;padding:16px 0}}
+  body{display:block;padding:0}.site-header{position:relative}.game-layout{width:min(1240px,100%);margin:auto;padding:24px 30px 44px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:36px;align-items:start}.board-column{min-width:0}.board-column canvas{display:block;width:100%;max-width:none;height:auto;aspect-ratio:560/620}.side-panel{min-width:0;padding-top:8px}.side-panel #status{margin:0;min-height:28px}.side-panel #game-controls{display:grid;grid-template-columns:1fr 1fr;margin:16px 0 20px;max-width:none;gap:10px}.side-panel #game-controls label{grid-column:1/-1;display:grid;gap:5px;color:var(--soft);font-size:12px}.side-panel #game-controls button{width:auto!important;margin:0}.side-panel #game-controls #tut-open{display:block;grid-column:1/-1}.record-wrap{margin:0;padding:18px 0 0}.move-number{color:#788177}.player-tag{display:inline-flex;align-items:center;gap:7px}.player-tag.red{color:var(--red)}.player-tag.black{color:var(--ink)}.player-tag.active{border-color:var(--ink);background:var(--ink);color:white}.player-tag.active.red{border-color:var(--red);background:var(--red)}#tutorial{display:none;grid-column:auto;grid-row:auto;max-width:none;margin:22px 0 0;padding:18px 0;border-top:1px solid var(--line)}.lesson-nav{display:flex;gap:8px;flex-wrap:wrap}.lesson-nav .spacer{flex:1}
+  @media(max-width:850px){.game-layout{padding:18px 20px 34px;grid-template-columns:minmax(0,1fr) 285px;gap:22px}}
+  @media(max-width:680px){.game-layout{display:flex;flex-direction:column;padding:10px 12px 28px;gap:14px}.board-column,.side-panel{width:100%}.board-column canvas{border-width:6px}.side-panel{padding-top:0}.side-panel #game-controls{margin:14px 0;grid-template-columns:1fr 1fr}.record-wrap{padding-top:14px}.site-header{padding:16px}.site-header h1{font-size:21px}.site-header:before{width:38px;height:38px;font-size:21px}.player-strip{min-height:39px;font-size:11px}.player-tag{padding:4px 7px}}
+  @media(max-width:360px){.game-layout{padding-inline:7px}.board-column canvas{border-width:4px}}
 </style>
 </head>
 <body>
-<h1>象　棋</h1>
+<header><div class="brand-copy"><h1>弈境棋院</h1><p>一局一境，靜觀棋變</p></div></header>
+<div id="top-player" class="player-strip"></div>
 <div id="status"></div>
 <canvas id="board" width="560" height="620"></canvas>
+<div id="bottom-player" class="player-strip"></div>
 <div id="tutorial">
   <h2 id="tut-title"></h2>
   <p id="tut-text"></p>
@@ -45,13 +44,15 @@
   </div>
 </div>
 <div class="controls" id="game-controls">
-  <button id="tut-open">📖 新手教學</button>
+  <button id="tut-open">十課互動教學</button>
+  <label>對戰模式
   <select id="mode">
     <option value="ai-random" selected>對電腦（隨機決定誰先走）</option>
     <option value="ai-red">對電腦（我執紅先行）</option>
     <option value="ai-black">對電腦（我執黑後行）</option>
     <option value="pvp">雙人同機</option>
-  </select>
+  </select></label>
+  <label>電腦難度
   <select id="level">
     <option value="1,500,0" selected>難度：新手</option>
     <option value="1,350">難度：入門</option>
@@ -59,11 +60,12 @@
     <option value="2,40">難度：普通</option>
     <option value="3,6">難度：進階</option>
     <option value="4,6">難度：困難</option>
-  </select>
-  <button id="hint">💡 提示</button>
+  </select></label>
+  <button id="hint">請求提示</button>
   <button id="undo">悔棋</button>
   <button id="restart">重新開始</button>
 </div>
+<section class="record-wrap"><h2 class="record-title">本局走棋 <small>簡易座標・非正式記譜</small></h2><ol id="move-list" class="move-list"></ol></section>
 
 <script>
 /* ================= Engine ================= */
@@ -262,6 +264,16 @@ function chooseMove(b, red, depth, jitter = 6, qdepth = 4) {
 }
 
 /* ================= UI ================= */
+const gameLayout = document.createElement('main'); gameLayout.className = 'game-layout';
+const boardColumn = document.createElement('section'); boardColumn.className = 'board-column';
+const sidePanel = document.createElement('aside'); sidePanel.className = 'side-panel';
+const topPlayer = document.getElementById('top-player'), bottomPlayer = document.getElementById('bottom-player');
+const gameControls = document.getElementById('game-controls'), recordWrap = document.querySelector('.record-wrap');
+const statusNote = document.createElement('p'); statusNote.id = 'status-note'; statusNote.className = 'status-note';
+document.getElementById('status').after(statusNote);
+boardColumn.append(topPlayer, document.getElementById('board'), bottomPlayer, document.getElementById('tutorial'));
+sidePanel.append(document.getElementById('status'), statusNote, gameControls, recordWrap); gameLayout.append(boardColumn, sidePanel);
+document.querySelector('header').after(gameLayout);
 const S = 60, M = 40;
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -270,6 +282,50 @@ const statusEl = document.getElementById('status');
 let board, redTurn, selected, targets, history, lastMove, over, thinking, flip;
 let tut = null;      // current lesson index, null when playing a normal game
 let gameId = 0;      // invalidates pending AI moves after a reset
+const moveList = document.getElementById('move-list');
+const lessonCopy = [
+  ['棋盤與九宮','棋盤由九條直線、十條橫線構成。雙方各有一座九宮，將帥只能在九宮內移動。點選紅帥，看看合法落點。'],
+  ['車行直線','車沿橫線或直線走，途中不能越過其他棋子。棋路通暢時，車的控制範圍很大。試走動紅車。'],
+  ['炮隔子吃','炮不吃子時和車一樣走直線；吃子時，炮與目標之間必須恰好隔著一枚棋子。試著移動紅炮。'],
+  ['馬走日字','馬走日字形，先橫或直一格，再斜走一格。若第一步方向被棋子堵住，就是蹩馬腿，該方向不能走。'],
+  ['象飛田字','相（象）走田字形，不能越過田字中心的棋子，也不能過河。紅相留在己方河界內活動。'],
+  ['士與將帥','仕（士）沿九宮斜線走一格；帥（將）在九宮內橫走或直走一格。兩將不可在同一直線上直接照面。'],
+  ['兵卒過河','兵卒未過河只能向前走；過河後可向前、向左或向右，但不能後退。試著移動已過河的紅兵。'],
+  ['將軍與應將','當一方棋子直接威脅對方將帥時稱為將軍。被將軍的一方必須立刻解除威脅，不能走其他棋。'],
+  ['一步將死','練習題：紅方先行。紅車沿中線將軍，黑將無處可逃。選取紅車，完成這步將軍。'],
+  ['馬炮配合','練習題：紅方先行。善用馬的跳躍與炮的直線控制，找出能困住黑將的制勝一著。']
+];
+
+function updateMoveList() {
+  moveList.replaceChildren();
+  if (!history.length) { const li = document.createElement('li'); li.className='empty-record'; li.textContent='棋局開始後，走棋將記錄於此。'; moveList.append(li); return; }
+  const pos = (r,c) => String.fromCharCode(65+c) + (10-r);
+  for (let i=0; i<history.length; i+=2) {
+    const row=document.createElement('li'); row.className='move-row';
+    const no=document.createElement('span'); no.className='move-number'; no.textContent=(Math.floor(i/2)+1)+'.'; row.append(no);
+    for (const h of [history[i],history[i+1]]) {
+      const entry=document.createElement('span'); entry.className='move-entry';
+      if (h) entry.textContent=pos(h.m[0],h.m[1])+'→'+pos(h.m[2],h.m[3])+(h.cap?' ×':'');
+      row.append(entry);
+    }
+    moveList.append(row);
+  }
+}
+
+function updatePlayers() {
+  const mode=document.getElementById('mode').value;
+  const player=(red)=>{
+    const ai=mode!=='pvp' && aiRed===red, tag=document.createElement('span');
+    tag.className='player-tag '+(red?'red':'black')+((tut===null&&red===redTurn)?' active':'');
+    tag.textContent=(red?'紅方':'黑方')+'・'+(ai?'電腦':'玩家')+'　'+(tut!==null?'教學':red===redTurn?'行棋中':'等待'); return tag;
+  };
+  topPlayer.replaceChildren(player(flip)); bottomPlayer.replaceChildren(player(!flip));
+}
+
+function resizeBoard() {
+  const dpr=window.devicePixelRatio||1, width=Math.round(560*dpr), height=Math.round(620*dpr);
+  if (canvas.width!==width || canvas.height!==height) { canvas.width=width; canvas.height=height; ctx.setTransform(width/560,0,0,height/620,0,0); if(board) draw(); }
+}
 
 /* ================= Tutorial ================= */
 const LESSONS = [
@@ -298,14 +354,15 @@ const LESSONS = [
 function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ''; }
 
 function loadLesson(i) {
+  if (i < 0 || i >= LESSONS.length) return;
   tut = i; gameId++;
   const lesson = LESSONS[i];
   board = Array.from({length:10}, () => Array(9).fill(null));
   lesson.pieces.forEach(([r, c, p]) => { board[r][c] = p; });
   redTurn = true; selected = null; targets = []; history = [];
   lastMove = null; over = false; thinking = false; flip = false;
-  document.getElementById('tut-title').textContent = `第 ${i + 1} 課　${lesson.title}`;
-  document.getElementById('tut-text').innerHTML = lesson.text;
+  document.getElementById('tut-title').textContent = `第 ${i + 1} 課　${lessonCopy[i][0]}`;
+  document.getElementById('tut-text').textContent = lessonCopy[i][1];
   document.getElementById('tut-count').textContent = `${i + 1} / ${LESSONS.length}`;
   document.getElementById('tut-prev').disabled = i === 0;
   document.getElementById('tut-next').disabled = i === LESSONS.length - 1;
@@ -355,9 +412,9 @@ function px(r, c) {
 }
 
 function drawBoard() {
-  ctx.fillStyle = '#e3b96b';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = '#4a3216'; ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#eee4cf';
+  ctx.fillRect(0, 0, 560, 620);
+  ctx.strokeStyle = '#665d4b'; ctx.lineWidth = 1.35;
   const line = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
   for (let r = 0; r < 10; r++) line(M, M + r * S, M + 8 * S, M + r * S);
   for (let c = 0; c < 9; c++) {
@@ -367,23 +424,25 @@ function drawBoard() {
   line(M + 3 * S, M, M + 5 * S, M + 2 * S); line(M + 5 * S, M, M + 3 * S, M + 2 * S);
   line(M + 3 * S, M + 7 * S, M + 5 * S, M + 9 * S); line(M + 5 * S, M + 7 * S, M + 3 * S, M + 9 * S);
   ctx.strokeRect(M - 4, M - 4, 8 * S + 8, 9 * S + 8);
-  ctx.fillStyle = '#4a3216'; ctx.font = 'bold 28px "Noto Serif TC","PMingLiU",serif';
+  ctx.fillStyle = '#756b58'; ctx.font = '24px "Noto Serif TC","PMingLiU",serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(flip ? '漢　　界' : '楚　　河', M + 2 * S, M + 4.5 * S);
-  ctx.fillText(flip ? '楚　　河' : '漢　　界', M + 6 * S, M + 4.5 * S);
+  ctx.fillText(flip ? '漢界' : '楚河', M + 2 * S, M + 4.5 * S);
+  ctx.fillText(flip ? '楚河' : '漢界', M + 6 * S, M + 4.5 * S);
 }
 
 function drawPiece(r, c, p, highlight) {
   const [x, y] = px(r, c);
   const red = isRed(p);
+  const face = ctx.createRadialGradient(x - 7, y - 8, 2, x, y, 27);
+  face.addColorStop(0, '#fffef8'); face.addColorStop(1, '#e6dcc6');
   ctx.beginPath(); ctx.arc(x, y, 26, 0, Math.PI * 2);
-  ctx.fillStyle = '#f6e3bb'; ctx.fill();
-  ctx.lineWidth = highlight ? 4 : 2;
-  ctx.strokeStyle = highlight ? '#2a7de1' : (red ? '#b3261e' : '#222');
+  ctx.fillStyle = face; ctx.fill();
+  ctx.lineWidth = highlight ? 3.5 : 1.5;
+  ctx.strokeStyle = highlight ? '#315d49' : (red ? '#ad5146' : '#465349');
   ctx.stroke();
   ctx.beginPath(); ctx.arc(x, y, 21, 0, Math.PI * 2);
-  ctx.lineWidth = 1.2; ctx.strokeStyle = red ? '#b3261e' : '#222'; ctx.stroke();
-  ctx.fillStyle = red ? '#b3261e' : '#1a1a1a';
+  ctx.lineWidth = 1; ctx.strokeStyle = red ? '#ad5146' : '#465349'; ctx.stroke();
+  ctx.fillStyle = red ? '#a43b32' : '#26352d';
   ctx.font = 'bold 28px "Noto Serif TC","PMingLiU",serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(NAMES[p], x, y + 2);
@@ -392,7 +451,7 @@ function drawPiece(r, c, p, highlight) {
 function draw() {
   drawBoard();
   if (lastMove) {
-    ctx.fillStyle = 'rgba(42,125,225,.28)';
+    ctx.fillStyle = 'rgba(169,133,69,.22)';
     for (const [r, c] of [[lastMove[0], lastMove[1]], [lastMove[2], lastMove[3]]]) {
       const [x, y] = px(r, c); ctx.fillRect(x - 28, y - 28, 56, 56);
     }
@@ -404,15 +463,15 @@ function draw() {
     if (checked && p === checked) {
       const [x, y] = px(r, c);
       ctx.beginPath(); ctx.arc(x, y, 32, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,60,40,.45)'; ctx.fill();
+      ctx.fillStyle = 'rgba(164,59,50,.28)'; ctx.fill();
     }
     drawPiece(r, c, p, selected && selected[0] === r && selected[1] === c);
   }
   for (const [r, c] of targets) {
     const [x, y] = px(r, c);
     ctx.beginPath(); ctx.arc(x, y, board[r][c] ? 30 : 8, 0, Math.PI * 2);
-    if (board[r][c]) { ctx.lineWidth = 3; ctx.strokeStyle = '#2a7de1'; ctx.stroke(); }
-    else { ctx.fillStyle = 'rgba(42,125,225,.8)'; ctx.fill(); }
+    if (board[r][c]) { ctx.lineWidth = 3; ctx.strokeStyle = '#a43b32'; ctx.stroke(); }
+    else { ctx.fillStyle = '#a98545'; ctx.fill(); }
   }
 }
 
@@ -431,6 +490,9 @@ function update() {
   } else {
     statusEl.textContent = `輪到${side}`;
   }
+  statusNote.textContent = over ? '可悔棋復盤，或重新開始。' : thinking ? '請稍候，電腦正在計算。' : '選取棋子查看合法落點';
+  updatePlayers();
+  updateMoveList();
   draw();
 }
 
@@ -438,7 +500,8 @@ function finish() {
   if (legalMoves(board, redTurn).length) return false;
   over = true;
   statusEl.textContent = `${redTurn ? '黑方' : '紅方'}獲勝！（${inCheck(board, redTurn) ? '將死' : '困斃'}）— 按「悔棋」或「重新開始」`;
-  statusEl.className = 'check';
+  statusEl.className = 'win';
+  updatePlayers(); updateMoveList();
   draw();
   return true;
 }
@@ -448,7 +511,8 @@ function play(m) {
   history.push({ m, cap });
   lastMove = m; selected = null; targets = [];
   redTurn = !redTurn;
-  if (!finish()) update();
+  update();
+  finish();
 }
 
 function maybeAI() {
@@ -479,8 +543,11 @@ canvas.addEventListener('click', e => {
   const ai = tut === null ? aiSide() : null;
   if (ai !== null && redTurn === ai) return;
   const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * canvas.width / rect.width;
-  const y = (e.clientY - rect.top) * canvas.height / rect.height;
+  const style = getComputedStyle(canvas);
+  const borderX = parseFloat(style.borderLeftWidth) || 0;
+  const borderY = parseFloat(style.borderTopWidth) || 0;
+  const x = (e.clientX - rect.left - borderX) * 560 / (rect.width - borderX - (parseFloat(style.borderRightWidth) || 0));
+  const y = (e.clientY - rect.top - borderY) * 620 / (rect.height - borderY - (parseFloat(style.borderBottomWidth) || 0));
   let c = Math.round((x - M) / S), r = Math.round((y - M) / S);
   if (r < 0 || r > 9 || c < 0 || c > 8) return;
   if (flip) { c = 8 - c; r = 9 - r; }
@@ -517,7 +584,7 @@ document.getElementById('hint').onclick = () => {
     if (id !== gameId) return;
     let m = null;
     try {
-      m = chooseMove(board, redTurn, 3, 0);
+      m = chooseMove(board, redTurn, 1, 0, 0);
     } catch (err) {
       m = null;
     } finally {
@@ -528,7 +595,7 @@ document.getElementById('hint').onclick = () => {
     selected = [m[0], m[1]];
     targets = [[m[2], m[3]]];
     draw();
-    setStatus(`💡 建議：把「${NAMES[board[m[0]][m[1]]]}」走到藍圈的位置`);
+    setStatus(`提示建議：把「${NAMES[board[m[0]][m[1]]]}」移至金色標記處`);
   }, 60);
 };
 
@@ -547,6 +614,8 @@ document.getElementById('undo').onclick = () => {
   maybeAI();  // undoing back to the AI's turn must let it move again
 };
 
+new ResizeObserver(resizeBoard).observe(canvas.parentElement);
+resizeBoard();
 newGame();
 </script>
 </body>
