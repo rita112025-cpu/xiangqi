@@ -53,9 +53,11 @@
     <option value="pvp">雙人同機</option>
   </select>
   <select id="level">
-    <option value="2">難度：簡單</option>
-    <option value="3" selected>難度：普通</option>
-    <option value="4">難度：困難</option>
+    <option value="1,350" selected>難度：入門</option>
+    <option value="1,120">難度：簡單</option>
+    <option value="2,40">難度：普通</option>
+    <option value="3,6">難度：進階</option>
+    <option value="4,6">難度：困難</option>
   </select>
   <button id="undo">悔棋</button>
   <button id="restart">重新開始</button>
@@ -236,8 +238,10 @@ function negamax(b, depth, alpha, beta, red) {
   return best === -Infinity ? -9000 : best;
 }
 
-function chooseMove(b, red, depth) {
-  const JITTER = 6;  // small randomness so the AI doesn't always play the same game
+// jitter = random noise added to each move's score: small keeps games varied,
+// large makes the AI overlook gains and play weaker (used by easy levels)
+function chooseMove(b, red, depth, jitter = 6) {
+  const JITTER = jitter;
   const moves = legalMoves(b, red);
   if (!moves.length) return null;
   moves.sort(byCapture(b));
@@ -449,10 +453,10 @@ function maybeAI() {
   const id = gameId;
   setTimeout(() => {
     if (id !== gameId) return;
-    const depth = Number(document.getElementById('level').value);
+    const [depth, jitter] = document.getElementById('level').value.split(',').map(Number);
     let m = null;
     try {
-      m = chooseMove(board, redTurn, depth);
+      m = chooseMove(board, redTurn, depth, jitter);
     } catch (err) {
       setStatus('電腦出錯了，請按「悔棋」或「重新開始」', 'check');
     } finally {
