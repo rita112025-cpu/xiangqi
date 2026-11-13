@@ -455,6 +455,9 @@ function maybeAI() {
   const ai = aiSide();
   if (over || ai === null || redTurn !== ai) return;
   thinking = true; update();
+  // On a fresh board, pause so the player sees the reset before the AI's opening move
+  const fresh = history.length === 0;
+  if (fresh) setStatus('新局開始！電腦執紅先走…（你執黑）');
   const id = gameId;
   setTimeout(() => {
     if (id !== gameId) return;
@@ -468,7 +471,7 @@ function maybeAI() {
       thinking = false;
     }
     if (m) play(m);
-  }, 60);
+  }, fresh ? 1200 : 60);
 }
 
 canvas.addEventListener('click', e => {
