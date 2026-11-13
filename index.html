@@ -53,12 +53,14 @@
     <option value="pvp">雙人同機</option>
   </select>
   <select id="level">
-    <option value="1,350" selected>難度：入門</option>
+    <option value="1,500,0" selected>難度：新手</option>
+    <option value="1,350">難度：入門</option>
     <option value="1,120">難度：簡單</option>
     <option value="2,40">難度：普通</option>
     <option value="3,6">難度：進階</option>
     <option value="4,6">難度：困難</option>
   </select>
+  <button id="hint">💡 提示</button>
   <button id="undo">悔棋</button>
   <button id="restart">重新開始</button>
 </div>
@@ -220,8 +222,10 @@ function quiesce(b, alpha, beta, red, qdepth) {
   return alpha;
 }
 
+let qLimit = 4;  // capture-extension depth for the current search; 0 = don't look at recaptures
+
 function negamax(b, depth, alpha, beta, red) {
-  if (depth === 0) return quiesce(b, alpha, beta, red, 4);
+  if (depth === 0) return quiesce(b, alpha, beta, red, qLimit);
   const moves = gen(b, red);
   moves.sort(byCapture(b));
   let best = -Infinity;
@@ -240,8 +244,9 @@ function negamax(b, depth, alpha, beta, red) {
 
 // jitter = random noise added to each move's score: small keeps games varied,
 // large makes the AI overlook gains and play weaker (used by easy levels)
-function chooseMove(b, red, depth, jitter = 6) {
+function chooseMove(b, red, depth, jitter = 6, qdepth = 4) {
   const JITTER = jitter;
+  qLimit = qdepth;
   const moves = legalMoves(b, red);
   if (!moves.length) return null;
   moves.sort(byCapture(b));
@@ -453,10 +458,10 @@ function maybeAI() {
   const id = gameId;
   setTimeout(() => {
     if (id !== gameId) return;
-    const [depth, jitter] = document.getElementById('level').value.split(',').map(Number);
+    const [depth, jitter, qdepth = 4] = document.getElementById('level').value.split(',').map(Number);
     let m = null;
     try {
-      m = chooseMove(board, redTurn, depth, jitter);
+      m = chooseMove(board, redTurn, depth, jitter, qdepth);
     } catch (err) {
       setStatus('電腦出錯了，請按「悔棋」或「重新開始」', 'check');
     } finally {
@@ -498,6 +503,32 @@ document.getElementById('tut-prev').onclick = () => loadLesson(tut - 1);
 document.getElementById('tut-next').onclick = () => loadLesson(tut + 1);
 document.getElementById('tut-reset').onclick = () => loadLesson(tut);
 document.getElementById('tut-exit').onclick = () => { showTutorial(false); newGame(); };
+// Suggest a move for the player: pre-select the piece and mark its destination
+document.getElementById('hint').onclick = () => {
+  if (over || thinking || tut !== null) return;
+  if (aiRed !== null && redTurn === aiRed) return;
+  thinking = true;
+  setStatus('想一下該怎麼走…');
+  const id = gameId;
+  setTimeout(() => {
+    if (id !== gameId) return;
+    let m = null;
+    try {
+      m = chooseMove(board, redTurn, 3, 0);
+    } catch (err) {
+      m = null;
+    } finally {
+      thinking = false;
+    }
+    update();
+    if (!m) return;
+    selected = [m[0], m[1]];
+    targets = [[m[2], m[3]]];
+    draw();
+    setStatus(`💡 建議：把「${NAMES[board[m[0]][m[1]]]}」走到藍圈的位置`);
+  }, 60);
+};
+
 document.getElementById('restart').onclick = newGame;
 document.getElementById('mode').onchange = newGame;
 document.getElementById('undo').onclick = () => {
