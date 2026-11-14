@@ -42,8 +42,6 @@
   .board-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 2px 14px; }
   .eyebrow { color:var(--gold); font-size:.7rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
   .board-heading h2 { margin:4px 0 0; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.12rem; letter-spacing:.08em; }
-  .live-indicator { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.76rem; white-space:nowrap; }
-  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px rgba(57,116,91,.1); }
   .board-frame {
     width:100%; padding:10px; border-radius:16px;
     background:linear-gradient(145deg,#ead5ad,#d8b77d);
@@ -91,7 +89,7 @@
   .btn-accent { color:#805b27; border-color:#e6d4b4; background:#f8f0e2; }
   .help-copy { margin:0; color:var(--muted); font-size:.8rem; line-height:1.75; }
   #tutorial { display:none; padding:18px; border:1px solid #e8d8ba; border-radius:14px; background:#fbf5e9; }
-  #tutorial h2 { margin:0 0 10px; color:#8c642d; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.12rem; }
+  #tut-title { margin:0 0 10px; color:#8c642d; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.05rem; }
   #tut-text { margin:0 0 16px; color:#554b3c; font-size:.88rem; line-height:1.9; }
   #tutorial .controls { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   #tutorial .controls button { min-height:38px; padding:7px 8px; font-size:.78rem; }
@@ -140,7 +138,6 @@
           <div class="eyebrow">THE BOARD</div>
           <h2>楚河漢界</h2>
         </div>
-        <div class="live-indicator"><span class="live-dot"></span> 對弈進行中</div>
       </div>
       <div class="board-frame">
         <canvas id="board" width="560" height="620" aria-label="象棋棋盤，點擊棋子選擇移動"></canvas>
@@ -149,7 +146,7 @@
     </section>
 
     <aside class="side-column">
-      <section class="side-card" aria-label="對局設定與操作">
+      <section class="side-card" id="game-controls" aria-label="對局設定與操作">
         <div class="section-heading">
           <div class="section-icon" aria-hidden="true">⚙</div>
           <div><h2>對局設定</h2><p>選擇你的對弈方式</p></div>
@@ -175,7 +172,7 @@
             <option value="4,6">困難</option>
           </select>
         </div>
-        <div class="action-grid" id="game-controls">
+        <div class="action-grid">
           <button id="hint" class="btn-accent">提示走法</button>
           <button id="undo">悔棋</button>
           <button id="restart" class="btn-primary">重新開始對局</button>
