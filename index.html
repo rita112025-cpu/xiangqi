@@ -5,64 +5,209 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>線上象棋</title>
 <style>
-  :root { --bg:#2b2118; --panel:#3a2d21; --text:#f3e6d0; --accent:#c8923a; }
+  :root {
+    color-scheme: light;
+    --ink:#28251f; --muted:#777064; --paper:#f4f0e7; --panel:#fffdf8;
+    --line:#e5ddce; --red:#a6382e; --red-soft:#f8e9e4;
+    --gold:#b58a48; --gold-soft:#f4ead7; --green:#39745b;
+    --shadow:0 18px 50px rgba(56,43,25,.09);
+  }
   * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-         font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
-         display:flex; flex-direction:column; align-items:center; padding:16px; gap:12px; }
-  h1 { margin:0; font-size:1.5rem; letter-spacing:.3em; }
-  #status { font-size:1.15rem; min-height:1.6em; font-weight:700; }
-  #status.check { color:#ff6b5a; }
-  canvas { width:100%; max-width:560px; height:auto; border-radius:8px;
-           box-shadow:0 6px 24px rgba(0,0,0,.5); touch-action:manipulation; }
-  .controls { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:560px; }
-  select, button { background:var(--panel); color:var(--text); border:1px solid #5a4630;
-                   border-radius:6px; padding:8px 14px; font-size:.95rem; font-family:inherit; cursor:pointer; }
-  button:hover, select:hover { border-color:var(--accent); }
-  button:disabled { opacity:.4; cursor:default; }
-  #status.win { color:#7ddc7a; }
-  #tutorial { width:100%; max-width:560px; background:var(--panel); border:1px solid #5a4630;
-              border-radius:8px; padding:14px 16px; display:none; }
-  #tutorial h2 { margin:0 0 8px; font-size:1.15rem; color:var(--accent); }
-  #tut-text { margin:0 0 12px; line-height:1.7; }
-  #tutorial .controls { justify-content:space-between; }
+  body {
+    margin:0; min-height:100vh; padding:28px 22px 40px;
+    background:
+      radial-gradient(ellipse at 12% 0%, rgba(190,157,104,.13), transparent 34rem),
+      var(--paper);
+    color:var(--ink); font-family:Inter,"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  }
+  button,select { font:inherit; }
+  .app-shell { width:min(1120px,100%); margin:0 auto; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:24px; }
+  .brand { display:flex; align-items:center; gap:13px; }
+  .brand-mark {
+    display:grid; place-items:center; width:46px; height:46px; border-radius:14px;
+    color:#fff8eb; background:linear-gradient(145deg,#8d3029,#bd5742);
+    font-family:"Noto Serif TC","PMingLiU",serif; font-size:25px;
+    box-shadow:0 7px 18px rgba(141,48,41,.2);
+  }
+  h1 { margin:0; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.42rem; letter-spacing:.16em; }
+  .brand-subtitle { margin:3px 0 0; color:var(--muted); font-size:.78rem; letter-spacing:.08em; }
+  .top-note { color:var(--muted); font-size:.82rem; letter-spacing:.04em; }
+  .game-layout { display:grid; grid-template-columns:minmax(0,1.18fr) minmax(310px,.82fr); gap:22px; align-items:start; }
+  .board-panel,.side-card {
+    background:var(--panel); border:1px solid rgba(129,105,68,.13);
+    border-radius:22px; box-shadow:var(--shadow);
+  }
+  .board-panel { padding:20px; }
+  .board-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 2px 14px; }
+  .eyebrow { color:var(--gold); font-size:.7rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+  .board-heading h2 { margin:4px 0 0; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.12rem; letter-spacing:.08em; }
+  .live-indicator { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.76rem; white-space:nowrap; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px rgba(57,116,91,.1); }
+  .board-frame {
+    width:100%; padding:10px; border-radius:16px;
+    background:linear-gradient(145deg,#ead5ad,#d8b77d);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.65),0 8px 22px rgba(80,54,22,.12);
+  }
+  canvas { display:block; width:100%; max-width:560px; height:auto; margin:0 auto; border-radius:9px; touch-action:manipulation; cursor:pointer; }
+  #status {
+    display:flex; align-items:center; gap:9px; min-height:48px; margin-top:15px;
+    padding:11px 14px; border:1px solid var(--line); border-radius:12px;
+    background:#faf7f0; color:#554b3c; font-size:.92rem; font-weight:700; line-height:1.5;
+  }
+  #status::before { content:""; flex:0 0 8px; width:8px; height:8px; border-radius:50%; background:var(--gold); }
+  #status.check { color:var(--red); background:var(--red-soft); border-color:#efd3cb; }
+  #status.check::before { background:var(--red); }
+  #status.win { color:var(--green); background:#eaf3ed; border-color:#d3e6d9; }
+  #status.win::before { background:var(--green); }
+  .side-column { display:grid; gap:16px; }
+  .side-card { padding:20px; }
+  .section-heading { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .section-icon {
+    display:grid; place-items:center; width:34px; height:34px; border-radius:10px;
+    color:#8c642d; background:var(--gold-soft); font-size:16px;
+  }
+  .section-heading h2 { margin:0; font-size:.98rem; letter-spacing:.04em; }
+  .section-heading p { margin:3px 0 0; color:var(--muted); font-size:.75rem; }
+  .field-label { display:block; margin:0 0 7px; color:var(--muted); font-size:.76rem; font-weight:700; }
+  .field-group { margin-bottom:14px; }
+  select {
+    width:100%; min-height:44px; padding:0 38px 0 12px; border:1px solid var(--line);
+    border-radius:10px; background:#fffefa; color:var(--ink); font-size:.88rem; cursor:pointer;
+    outline:none; transition:border-color .18s,box-shadow .18s;
+  }
+  select:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(181,138,72,.13); }
+  .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:17px; }
+  button {
+    min-height:43px; padding:9px 12px; border:1px solid var(--line); border-radius:10px;
+    background:#fffefa; color:#51483b; font-size:.84rem; font-weight:700;
+    cursor:pointer; transition:transform .16s,border-color .16s,background .16s,box-shadow .16s;
+  }
+  button:hover:not(:disabled) { transform:translateY(-1px); border-color:#c5a46e; background:#fbf5e9; }
+  button:focus-visible { outline:3px solid rgba(181,138,72,.28); outline-offset:2px; }
+  button:disabled { opacity:.42; cursor:not-allowed; }
+  .btn-primary { grid-column:1/-1; color:#fffaf1; border-color:#96372e; background:linear-gradient(135deg,#8f3029,#b34a3b); box-shadow:0 6px 14px rgba(143,48,41,.16); }
+  .btn-primary:hover:not(:disabled) { background:linear-gradient(135deg,#7d2823,#a83f33); border-color:#7d2823; }
+  .btn-accent { color:#805b27; border-color:#e6d4b4; background:#f8f0e2; }
+  .help-copy { margin:0; color:var(--muted); font-size:.8rem; line-height:1.75; }
+  #tutorial { display:none; padding:18px; border:1px solid #e8d8ba; border-radius:14px; background:#fbf5e9; }
+  #tutorial h2 { margin:0 0 10px; color:#8c642d; font-family:"Noto Serif TC","PMingLiU",serif; font-size:1.12rem; }
+  #tut-text { margin:0 0 16px; color:#554b3c; font-size:.88rem; line-height:1.9; }
+  #tutorial .controls { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  #tutorial .controls button { min-height:38px; padding:7px 8px; font-size:.78rem; }
+  #tut-count { grid-column:1/-1; text-align:center; color:var(--muted); font-size:.76rem; }
+  .tutorial-open { width:100%; margin-bottom:14px; }
+  .footer-note { margin:18px 4px 0; color:#938a7b; font-size:.72rem; text-align:center; letter-spacing:.04em; }
   .hidden { display:none !important; }
+  @media (max-width:780px) {
+    body { padding:18px 14px 30px; }
+    .game-layout { grid-template-columns:1fr; }
+    .side-column { grid-template-columns:1fr 1fr; align-items:start; }
+    #tutorial { grid-column:1/-1; }
+  }
+  @media (max-width:520px) {
+    body { padding:12px 9px 24px; }
+    .topbar { margin-bottom:15px; }
+    .top-note { display:none; }
+    .brand-mark { width:40px; height:40px; }
+    h1 { font-size:1.2rem; }
+    .board-panel { padding:10px; border-radius:16px; }
+    .board-frame { padding:5px; }
+    .side-column { grid-template-columns:1fr; }
+    .side-card { padding:16px; }
+    .board-heading h2 { font-size:1rem; }
+    #status { min-height:43px; font-size:.84rem; }
+  }
 </style>
 </head>
 <body>
-<h1>象　棋</h1>
-<div id="status"></div>
-<canvas id="board" width="560" height="620"></canvas>
-<div id="tutorial">
-  <h2 id="tut-title"></h2>
-  <p id="tut-text"></p>
-  <div class="controls">
-    <button id="tut-prev">← 上一課</button>
-    <button id="tut-reset">重來</button>
-    <span id="tut-count" style="align-self:center"></span>
-    <button id="tut-next">下一課 →</button>
-    <button id="tut-exit">返回對局</button>
-  </div>
-</div>
-<div class="controls" id="game-controls">
-  <button id="tut-open">📖 新手教學</button>
-  <select id="mode">
-    <option value="ai-random" selected>對電腦（隨機決定誰先走）</option>
-    <option value="ai-red">對電腦（我執紅先行）</option>
-    <option value="ai-black">對電腦（我執黑後行）</option>
-    <option value="pvp">雙人同機</option>
-  </select>
-  <select id="level">
-    <option value="1,500,0" selected>難度：新手</option>
-    <option value="1,350">難度：入門</option>
-    <option value="1,120">難度：簡單</option>
-    <option value="2,40">難度：普通</option>
-    <option value="3,6">難度：進階</option>
-    <option value="4,6">難度：困難</option>
-  </select>
-  <button id="hint">💡 提示</button>
-  <button id="undo">悔棋</button>
-  <button id="restart">重新開始</button>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">棋</div>
+      <div>
+        <h1>線上象棋</h1>
+        <p class="brand-subtitle">XIANGQI · 中式棋藝對弈</p>
+      </div>
+    </div>
+    <div class="top-note">靜心布局・以棋會友</div>
+  </header>
+
+  <main class="game-layout">
+    <section class="board-panel" aria-label="象棋對弈區">
+      <div class="board-heading">
+        <div>
+          <div class="eyebrow">THE BOARD</div>
+          <h2>楚河漢界</h2>
+        </div>
+        <div class="live-indicator"><span class="live-dot"></span> 對弈進行中</div>
+      </div>
+      <div class="board-frame">
+        <canvas id="board" width="560" height="620" aria-label="象棋棋盤，點擊棋子選擇移動"></canvas>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <aside class="side-column">
+      <section class="side-card" aria-label="對局設定與操作">
+        <div class="section-heading">
+          <div class="section-icon" aria-hidden="true">⚙</div>
+          <div><h2>對局設定</h2><p>選擇你的對弈方式</p></div>
+        </div>
+        <button id="tut-open" class="tutorial-open btn-accent">新手教學　→</button>
+        <div class="field-group">
+          <label class="field-label" for="mode">對戰模式</label>
+          <select id="mode">
+            <option value="ai-random" selected>人機對戰・隨機先手</option>
+            <option value="ai-red">人機對戰・我執紅先行</option>
+            <option value="ai-black">人機對戰・我執黑後行</option>
+            <option value="pvp">雙人同機對戰</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="level">電腦難度</label>
+          <select id="level">
+            <option value="1,500,0" selected>新手</option>
+            <option value="1,350">入門</option>
+            <option value="1,120">簡單</option>
+            <option value="2,40">普通</option>
+            <option value="3,6">進階</option>
+            <option value="4,6">困難</option>
+          </select>
+        </div>
+        <div class="action-grid" id="game-controls">
+          <button id="hint" class="btn-accent">提示走法</button>
+          <button id="undo">悔棋</button>
+          <button id="restart" class="btn-primary">重新開始對局</button>
+        </div>
+      </section>
+
+      <section class="side-card" id="tutorial">
+        <div class="section-heading">
+          <div class="section-icon" aria-hidden="true">書</div>
+          <div><h2>新手教學</h2><p>循序認識象棋規則</p></div>
+        </div>
+        <h3 id="tut-title"></h3>
+        <p id="tut-text"></p>
+        <div class="controls">
+          <button id="tut-prev">← 上一課</button>
+          <button id="tut-next">下一課 →</button>
+          <button id="tut-reset">重看本課</button>
+          <button id="tut-exit" class="btn-primary">返回對局</button>
+          <span id="tut-count"></span>
+        </div>
+      </section>
+
+      <section class="side-card">
+        <div class="section-heading">
+          <div class="section-icon" aria-hidden="true">?</div>
+          <div><h2>操作說明</h2><p>快速開始你的第一局</p></div>
+        </div>
+        <p class="help-copy">點擊己方棋子查看可走位置，再點選藍色標記完成移動。對局中可使用「提示走法」取得建議，或透過「悔棋」返回上一步。</p>
+      </section>
+    </aside>
+  </main>
+  <p class="footer-note">XIANGQI · 傳承棋藝，方寸之間見真章</p>
 </div>
 
 <script>
